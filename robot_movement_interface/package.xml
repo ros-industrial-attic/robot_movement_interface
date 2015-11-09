@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package>
+  
+  <name>robot_movement_interface</name>
+  <version>1.0.0</version>
+  <description>Message definition of the Robot Movement Interface</description>
+  <maintainer email="paq@ipa.fhg.de">Pablo Quilez Velilla</maintainer>
+  <license>Apache 2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <run_depend>message_runtime</run_depend>
+  <run_depend>std_msgs</run_depend>
+
+</package>

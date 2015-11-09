@@ -1,0 +1,44 @@
+# -----------------------------------------------------------------------------
+# Configuration file for the IIWA Ros driver
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Connection configuration - robot ip and port
+# -----------------------------------------------------------------------------
+
+robot_ip: "172.31.1.147"
+robot_port: 30000
+
+# -----------------------------------------------------------------------------
+# Performance configuration
+# -----------------------------------------------------------------------------
+
+controlling_rate: 50 # 50 Hz for robot controlling
+publishing_rate: 100 # 100 Hz for state publishing
+
+# These parameters are used to sent in advance next command in order to keep a 
+# smooth blending, and also to detect when the robot arrives to a position:
+cartesian_delta: 0.01 # Next position will be send to the robot x m in advance
+joints_delta: 0.01 # 0.01 radians
+
+# -----------------------------------------------------------------------------
+# Topic and services names - topic and services names
+# -----------------------------------------------------------------------------
+
+commander_service_name: "iiwa_telnet" # Telnet connection with the controller
+command_list: 'iiwa_command_list'     # Commands to be executed
+command_result: 'iiwa_command_result' # Topic which gives command feedback after execution
+topic_joints: 'joint_states'          # Joint configuration publishing
+topic_wrench: 'tcp_wrench'            # Force and torque publishing
+topic_iiwa_frame: 'tool_frame'        # Frame publishing as iiwa frame
+topic_iiwa_flange: 'flange_frame'     # Flange frame publishing as iiwa frame
+
+# -----------------------------------------------------------------------------
+# Robot properties
+# Speed allows to calculate from rad/s to %
+# -----------------------------------------------------------------------------
+
+robot_base_name: 'base_link'
+joint_names: ['joint_0','joint_1','joint_2','joint_3','joint_4','joint_5','joint_6']
+max_speed: [1.71042267, 1.71042267, 1.74532925, 2.26892803, 2.44346095, 3.14159265, 3.14159265] # rad / s joint_0..joint_1
+

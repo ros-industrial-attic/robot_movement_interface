@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<RoboticsAPIData version="3">
+    <world>
+        <gravitation x="0.0" y="0.0" z="9.81"/>
+    </world>
+    <objectTemplates>
+        <toolTemplate class="" defaultMotionFrameRef="/flange_2_tool" name="Tool">
+            <frames>
+                <frame name="flange_2_tool">
+                    <transformation a="0.0" b="1.5708" c="0.0" x="150.0" y="0.0" z="40.0"/>
+                    <additionalInformation>
+                        <info key="Comment" type="java.lang.String" value="Transformation from flange to tool point"/>
+                    </additionalInformation>
+                </frame>
+            </frames>
+            <additionalInformation>
+                <info key="Comment" type="java.lang.String" value="tool"/>
+            </additionalInformation>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
+        </toolTemplate>
+    </objectTemplates>
+    <processDataContainer>
+        <processData dataType="java.lang.Integer" defaultValue="30000" displayName="Port" id="port" value="30000"/>
+        <processData dataType="java.lang.Boolean" defaultValue="false" displayName="Simulation" id="simulation" value="false"/>
+    </processDataContainer>
+</RoboticsAPIData>

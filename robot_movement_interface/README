@@ -1,16 +1,3 @@
-# robot_movement_interface
-Drivers implementing the Robot Movement Interface, which allows access to robot specific capabilities in a standardized common format while maintaining compatibility with the ROS-Industrial Joint interface.
-
-Please read included README files for detailed information.
-
-This metapackage currently contains:
--	iiwa_driver -> ROS iiwa driver (Robot Movement Interface and ROS Industrial Interface with MoveIt action)
--	robot_movement_interface -> shared message package for the drivers
-
-This is the initial version of the driver after refactoring. Progresively more features and drivers would be added.
-
-Please report problems or suggestions to Pablo.Quilez.Velilla@ipa.fraunhofer.de
-
 ===============================================================================
 Robot Movement Interface
 ===============================================================================

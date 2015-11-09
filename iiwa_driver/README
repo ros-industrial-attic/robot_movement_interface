@@ -1,0 +1,49 @@
+===============================================================================
+IIWA – Driver User guide
+===============================================================================
+
+The IIWA driver provides the Robot Movement interface as well as a MoveIt compatible layer. It is divided in two different components: Java Sunrise program directly executed in the Kuka controller and the ROS nodes. The communication between controller and ROS is performed through a TCP/IP socket.
+
+The ROS part is divided in different components following a modular architecture. Main components are:
+-	iiwa_commander: provides a ROS service to send commands to the robot. It manages and makes transparent to the user the TCP/IP connection.
+-	iiwa_commander_sim: simulates a connection with the robot. Basic robot simulation.
+-	iiwa_essentials_robot_movement: the main node, which provides the Robot Movement Interface and manages the command list processing and publishes the robot state.
+-	iiwa_essentials: provides ROS Industrial standard topics.
+-	iiwa_moveit: encapsulates the ROS Industrial standard topics into the standard MoveIt action.
+
+More details about the generic driver architecture and the Robot Movement interface can be found separately in the Robot Movement Interface definition document. A basic knowledge of revision control software as well as ROS is assumed.
+
+===============================================================================
+Usage
+===============================================================================
+
+roslaunch iiwa_driver start.launch -> Starts the communication node (iiwa_commander) and the robot_movement_interface
+roslaunch iiwa_driver start_moveit.launch -> Starts the communication node and the ros industrial interface
+roslaunch iiwa_driver start_sim.launch -> Uses a simulated connection to the controller
+roslaunch iiwa_driver start_moveit_sim.launch -> Uses a simulated connection to the controller
+
+===============================================================================
+Robot Movement interface
+===============================================================================
+
+The driver initializes six topics:
+-	/command_list: robot controlling
+	Type: robot_movement_interface/CommandList
+-	/command_result: robot feedback
+	Type: robot_movement_interface/Result
+-	/joint_states: joint angles publishing (in radians)
+	Type: sensor_msgs/JointState
+-	/tool_frame: tool frame in m and radians following Euler Intrinsic ZYX convention
+	Type: robot_movement_interface/EulerFrame
+-	/flange_frame: flange frame in m and radians following Euler Intrinsic ZYX convention
+	Type: robot_movement_interface/EulerFrame
+-	/tcp_wrench: tool force and torque
+	Type: geometry_msgs/WrenchStamped
+
+Control topic accepts list of commands which will be processed. The processing is asynchronous. This means that when new commands arrive, they are added to the command queue. Internally next command is only launch when the previous is finished. Feedback is produced after the completion of a command.
+
+Blending and delta distance are used to calculate exactly when next command is needed to be launch in order to allow smooth blending.
+There are three different robot controlling modes: normal, smart and direct. Normal is limited to a low command frequency (approximately 5-10 Hz). Smart allows until approximately 50 Hz joint and frame-based controlling. Direct mode can work until approximately 100 Hz, but it is discouraged due to its instability. Smart and Direct mode requires no longer than 1 second delay between commands. Otherwise robot controller blocks.
+
+Available commands can be found in the corresponding table in the robot_movement_interface top directory.
+

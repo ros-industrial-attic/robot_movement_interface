@@ -1,0 +1,154 @@
+Copyright 2015 Fraunhofer IPA
+
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+
+	   http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+	
+	Contributors:
+	- Pablo Quilez Velilla - First release
+	
+===============================================================================
+Installation steps
+===============================================================================
+
+"sunrise" folder contains the program which has to be installed into the robot controller
+in order to stablish the communication.
+
+Despite the effort to make a working code out of the box some points must be considered
+before, during and after installing the application.
+
+Installations steps:
+
+1) 	Install in your computer the Sunrise Workbench application provided by KUKA 
+	(Eclipse environment) and connect with the robot through ethernet cable 
+	(172.31.1.147 should be the default ip). Some switchs/routers may give problems
+	so that it is better to connect directly computer-controller.
+2)	Create a new Sunrise project with the suitable configuration for your robot 
+	and attached flange. Safety configuration must be also configured. At this point
+	if you are not familiar with the iiwa, it is better to install the project and
+	activate the configuration (a password providen by KUKA may be required) before
+	continuing. If you are not familiar with the safety configuration activation process
+	please contact Kuka directly.
+3)	Copy the ROS_driver.java program into the source src folder.
+	Source is configured for LBR_iiwa_7_R800, but it should also work with iiwa_14.
+	If necessary modify LBR_iiwa_7_R800_1 with the corresponding robot name.
+4)	Replace the RoboticsAPI.data.xml. The new file contains:
+	- 	Tool transformation -> You will need to configure your tool (radians and mm)
+		by indicating the transformation flange to tcp in Sunrise or directly in the xml.
+	-	Port -> port awaiting ROS connection. Controller sometimes blocks the port
+		after errors, collisions. It allows a fast driver reboot by changing the port
+		without needing to restart the controller or wait until port is flushed.
+	-	Simulation -> IMPORTANT! Currently not working with all commands, some will still
+		produce robot move. Activates / Deactivates move simulation directly in the sunrise
+		side
+5)	Install in StationSetup.cat (software tab) the required libraries: 
+	DirectServo Motion Extension, SmartServo Motion Extension, Fast Robot Interface.
+	Java source code can be modified to remove those features which require the libraries.
+6)	In StationSetup.cat (installation tab) proceed to install the configuration into
+	the controller. This operation could take some time. Follow the instructions in SmartPad.
+7)	Synchronize (install) the current project into the controller. After installation
+	a new program called ROS_driver should appear in the Program menu of the SmartPad.
+8)	Open the communications ports in the controller firewall (Windows system). You can connect
+	directly a display, mouse and keyboard to the controller or access through shared folder
+	using windows explorer (\\172.31.1.147). Controller could require a user and a password.
+	Kuka should provide this information. Then navigate to Krc/Robot/Config/User/Common/KliConfig.xml
+	Create a new NAT rule in this file by copying this line in "virtual5" section:
+	[GlobalNatInterface] [addr] port 30000 -> [host:WINDOWS] port 30000 tcp/udp</NATRule>
+	Repeat for additional ports (30001, 30002 ...) if you want. Restart the controller after saving.
+9)	Open ProcessData menu in SmartPad to check port configuration and launch the ROS_driver
+	application from the Programs menu.
+	
+===============================================================================
+Structure and functionality
+===============================================================================
+
+Basically ROS_driver program is a Telnet-based command-driven TCP server.
+A command is a string line (terminated with /r/n, or /n). Each commands produces a fast response. 
+Command rate is stable until several thousands of commands per second with direct ethernet connection.
+Produced responses (replies) are also string lines.
+Exceptions are catched in order to allow reconnecting in case of error or collision.
+
+Server logic:
+    -	wait until a new command is received through the socket (new line ending character)
+    -	parse the command and parameters
+    -	execute the corresponding operation (non-blocking)
+    -	send back the reply with the produced arguments or message
+
+Command types:
+	-	Status: robot won't move. Command reply include information such as position.
+	-	Move: robot will move
+
+Robot has four different modes:
+    -	Normal: moves cannot be cancelled without stopping. 
+    	Allowed rate is insufficient for reactive operations (~100 ms stopping). In this mode moves are
+    	internall queued in the controller if move commands are received faster than processing time.
+    -	Impedance: spring-like behaviour.
+    -	(Connectivity) Smart: accepts PTP and LIN moves in the whole work space, also joints. ~50 Hz
+    -	(Connectivity) Direct: suitable for reactive operations, but target point must be very near 
+    	(approx. degree range) otherwise it produces error. ~100 Hz
+Changing between modes will stop the robot for about 100 ms. 
+
+A detailed available command list is provided in section Protocol. It is also possible to directly speak with the driver through telnet (telnet 172.31.1.147 30000).
+
+===============================================================================
+Protocol
+===============================================================================
+
+-	Format
+
+	Each command is represented as a string line (string ended in \n, \r or \n\r) 
+	which contains a command id, a : and parameters as space separated values:
+	-	first value: command
+	-	separator: :
+	-	rest: parameters
+
+	Spaces are trimed and multiple spaces (and also tabs) ignored. Separator and parameters 
+	are not necessary for commands which don't require input parameters.
+
+	Each sent command will produce a space separated values string line (string ended in \n, \r or \n\r)
+	as reply containing the reply parameters.
+
+-	Command list
+
+	All joints (j) are in rad, velocities (v) in percentage (0..1) if not specified, 
+	forces and thresholds in Newton, time in seconds, stiffness constant in N*m, blending in mm. 
+	Kuka uses Z,Y,X Euler Intrinsic in Rad -> Z * Y * X (alpha = RotZ, beta = RotY, gamma = RotX). 
+	4000 Nm is a good stiffness constant.
+
+    hello -> hello // Ack
+    bye -> bye // Driver Shutdown
+    smart joint move : j0 j1 j2 j3 j4 j5 j6 v0 v1 v2 v3 v4 v5 v6 -> done // Smart joint move to joints
+    direct joint move : j0 j1 j2 j3 j4 j5 j6 v0 v1 v2 v3 v4 v5 v6 -> done // Direct joint move to joints, must be to target near current joints.
+    smart cartesian move : x y z alpha beta gamma speed -> done // Smart cartesian move at % speed
+    direct cartesian move : x y z alpha beta gamma speed -> done // Direct cartesian move at % speed
+    joint move : j0 j1 j2 j3 j4 j5 j6 v0 v1 v2 v3 v4 v5 v6 -> done // Normal ptp joint move, velocities are in %
+    lin move : x y z alpha beta gamma speed blending -> done // Normal cartesian LIN move to given frame. Speed in %
+    ptp move : x y z alpha beta gamma speed blending -> done // Normal cartesian PTP move to given frame. Speed in %
+    linr move : x y z alpha beta gamma speed blending r -> done // Normal cartesian LIN redundancy move to given frame. Redundancy r is an angle value in rad.
+    ptpr move : x y z alpha beta gamma speed blending r -> done // Normal cartesian PTP redundancy move to given frame. Redundancy r is an angle value in rad.
+    linforcez move : x y z alpha beta gamma speed blending thresholdZ -> done // Normal cartesian LIN move with force collision checking in Z (stops if force exceeds threshold absolute value)
+    ptpforcez move : x y z alpha beta gamma speed blending thresholdZ -> done // Normal cartesian PTP move with force collision checking in Z (stops if force exceeds threshold absolute value)
+    linforce move : x y z alpha beta gamma speed blending thresholdX trhesholdY thresholdZ -> done // Normal cartesian LIN move with force collision checking in X Y Z
+    ptpforce move : x y z alpha beta gamma speed blending thresholdX trhesholdY thresholdZ -> done // Normal cartesian PTP move with force collision checking in X Y Z
+    linstiff move : x y z alpha beta gamma speed stiffness fx fy fz tx ty tz -> done // LIN stifness move to position, f and t are required offset force and torque. Usually current force is sent after smoothing.
+    ptpstiff move : x y z alpha beta gamma speed stiffness fx fy fz tx ty tz -> done // PTP stifness move to position, f and t are required offset force and torque. Usually current force is sent after smoothing.
+    start gravity : stiffness -> done // Starts a position holder, experimental
+    get tool frame -> x y z alpha beta gamma // Current TCP (tool)
+    get flange frame -> x y z alpha beta gamma // Current flange frame (without tool)
+    get status -> moving / stopped // Current robot state
+    get cartesian force -> fx fy fz tx ty tz // Force at TCP
+    get joint position -> j0 j1 j2 j3 j4 j5 j6 // Joints values request
+    get joint torque -> t0 t1 t2 t3 t4 t5 t6 // Joint torque in N*m
+    stop -> done // Stops current move (hard stop, 100 ms or some seconds if impedance was active)
+
+Commands return "error" in case of error or "unknown command" if not recognized. 
+
+	

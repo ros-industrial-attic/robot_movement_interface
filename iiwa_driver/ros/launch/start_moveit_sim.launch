@@ -1,0 +1,18 @@
+<launch>
+
+	<!-- Start the communication between ROS and ROBOT -->
+	<node name="iiwa_com" pkg="iiwa_driver" type="iiwa_commander_sim.py">
+		<rosparam file="$(find iiwa_driver)/config/config.yaml" command="load" />
+	</node>
+
+	<!-- Start the driver -->
+	<node name="iiwa_driver" pkg="iiwa_driver" type="iiwa_essentials.py">
+		<rosparam file="$(find iiwa_driver)/config/config.yaml" command="load" />
+	</node>
+	
+	<!-- Start MoveIt action -->
+	<node name="iiwa_moveit" pkg="iiwa_driver" type="iiwa_moveit.py">
+		<rosparam file="$(find iiwa_driver)/config/config.yaml" command="load" />
+	</node>
+	
+</launch>

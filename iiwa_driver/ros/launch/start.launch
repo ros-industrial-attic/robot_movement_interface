@@ -1,0 +1,11 @@
+<launch>
+	<!-- Start the communication between ROS and ROBOT -->
+	<node name="iiwa_com" pkg="iiwa_driver" type="iiwa_commander.py">
+		<rosparam file="$(find iiwa_driver)/config/config.yaml" command="load" />
+	</node>
+
+	<!-- Start the driver -->
+	<node name="iiwa_robot_movement" pkg="iiwa_driver" type="iiwa_essentials_robot_movement.py">
+		<rosparam file="$(find iiwa_driver)/config/config.yaml" command="load" />
+	</node>
+</launch>

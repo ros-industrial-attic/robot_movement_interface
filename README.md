@@ -5,7 +5,9 @@ Please read included README files for detailed information.
 
 This metapackage currently contains:
 -	iiwa_driver -> ROS iiwa driver (Robot Movement Interface and ROS Industrial Interface with MoveIt action)
+-	ur_driver -> ROS UR driver (Robot Movement Interface and MoveIt action, Control Box 3.x supported)
 -	robot_movement_interface -> shared message package for the drivers
+-	dependecies -> common dependencies for some drivers.
 
 This is the initial version of the driver after refactoring. Progresively more features and drivers would be added.
 

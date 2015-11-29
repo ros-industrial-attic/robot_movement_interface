@@ -1,0 +1,25 @@
+##############################
+#      Action to set or      #
+#      query a bunch of      #
+#         digital IOs        #
+##############################
+
+#goal definition
+Header header
+int32 msgId
+int32[]   ioNr 
+#false=write value to IO, true=only read current state
+bool[]    readOnly
+
+#if so this state is written
+bool[]    newState
+---
+#result definition
+Header header
+int32[]   ioNr
+bool[]    state
+---
+#feedback
+Header header
+int32[]   ioNr
+int32[]   stage

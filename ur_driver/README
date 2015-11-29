@@ -1,0 +1,134 @@
+===============================================================================
+UR – Driver User guide
+===============================================================================
+
+This driver provides the Robot Movement Interface interface for UR5 and UR10 as
+well as joint_trajectory_interface action (MoveIt compatible layer). Digital IOs
+reading/setting is also allowed.
+
+It was tested both with Control Box version 3 and 3.1. Communication between ROS 
+and controller is performed through UR Script.
+
+Driver requires ur_description package (http://wiki.ros.org/ur_description). For
+commodity it is included in the dependencies folder of the Robot Movement Interface
+package.
+
+More details about the generic driver architecture and the Robot Movement 
+interface can be found separately in the Robot Movement Interface definition document.
+
+===============================================================================
+Usage
+===============================================================================
+
+roslaunch ur_driver ur10_real.launch -> Starts the driver configured for UR10
+roslaunch ur_driver ur10_sim.launch -> Starts the driver configured for UR10 simulation
+roslaunch ur_driver ur5_real.launch -> Starts the driver configured for UR5
+roslaunch ur_driver ur5_sim.launch -> Starts the driver configured for UR5 simulation
+
+rosrun ur_driver joint_trajectory_action.py -> Starts the joint_trajectory_action wrapper (MoveIt action)
+
+===============================================================================
+System Architecture and configuration
+===============================================================================
+
+The driver is structured in a two layered interface by using the ROS messaging capabilities.
+
+########                           ##############
+#MoveIt#                           #User program#
+########                           ##############
+   ||                                    ||
+   ||                                    ||
+   ||                                    ||
+############################             ||
+#joint_trajectory_interface# Layer 2     ||
+############################             ||
+            ||                           ||
+#################################################
+#      Robot Movement Interface ur_driver       # Layer 1
+#################################################
+
+===============================================================================
+Layer 1 - Robot Movement Interface 
+===============================================================================
+
+Layer 1 is the driver itself. It communicates with the UR10 Robot to send the commands through a TCP/IP
+connection by using the Universal Robots Script language. It also provides a ROS interface to control the
+robot and to read information about the current position and joints.
+
+The driver configuration can be modified by editing the ur*_driver_config.yaml file in the cfg directory.
+
+The driver uses six topics:
+-	/command_list: robot controlling
+	Type: robot_movement_interface/CommandList
+-	/command_result: robot feedback
+	Type: robot_movement_interface/Result
+-	/joint_states: joint angles publishing (in radians)
+	Type: sensor_msgs/JointState
+-	/tool_frame: tool frame in m and radians following Euler Intrinsic ZYX convention
+	Type: robot_movement_interface/EulerFrame
+-	/pose_state: tool frame in m and quaternions
+	Type: geometry_msgs/Pose
+	
+Tool frame is also published in TF
+
+CommandList topic controls the robot move by sending a list of commands. Driver only accepts replacing the
+current trajectory, but it is possible to extend a running trajectory with blending by resending commands.
+Allowed commands are described in the Excel table in the Robot Movement Interface repository.
+
+Result topic publishes feedback after the finalization of a robot command. Only target-based commands can
+produce a feedback (as it is described in the paragraph Commands). If the executed commands produces
+a result then the command id is sent back to identify the finished command. Currently the command
+feedback is not guarantee, depending on the robot velocity as well as the delta distance. The robot
+position or the robot joint configuration is read at a configured minimal frequency of 20 Hz. When the
+distance between current position (or joints) and target position (or joints) is shorter than Euclidean
+distance of delta + blending (or only delta in joint space) then the driver sends the feedback. Euclidean
+distance is calculated with 3 dimensions for positions and 6 dimensions for joints.
+
+Commands:
+- Target-based commands: in these commands a target position is defined as goal. It could be
+  defined with Joints (radians) or with Cartesian positions (Euler Intrinsic ZYX convention in meters).
+- Relative-based commands: relative commands send a current velocity vector (in Cartesian or in
+  joints) to the robot and a time duration. If one or more relative-based commands are found in a
+  robot movement command, then no result feedback will be provided at all.
+- Stop command: an empty command list with replace as true.
+
+Types of commands
+Current accepted commands are:
+- LIN: lineal trajectory in tool space with target position or joint configuration.
+- PTP: lineal trajectory in joint space with target position or joint configuration
+- LIN_TIMED: same as LIN but speed and acceleration is overridden by the robot to try to arrive to
+  the position in the given time.
+- JOINT_SPEED: relative command with command time duration
+- CARTESIAN_SPEED: relative command with command time duration
+
+The driver accepts different types of commands with a flexible configuration. Header is automatic filled by ROS.
+
+Actions:
+-	digital_io -> Set/Read a digital IO
+-	digital_io_array -> Set/Read many digital IOs
+
+===============================================================================
+Layer 2
+===============================================================================
+
+Joint Trajectory Action is a module of the driver which provides a ROS MoveIt interface
+(http://wiki.ros.org/joint_trajectory_action) by wrapping the joint trajectory to compatible Robot
+Movement Interce messages. It also provides guaranteed feedback based on the time stamps of the trajectory.
+This module starts a ROS ActionServer (/ur_joint_trajectory_action).
+
+Internally the LIN_TIMED commands are used to provide a blend trajectory in the required time. Position
+feedback is independent of the Layer 1 feedback, in order to guarantee feedback after each point is
+traversed.
+
+If a joint trajectory is being executed, Layer 1 must not be used. Otherwise the trajectory
+will be aborted and the most recent command list executed.
+
+===============================================================================
+To Do
+===============================================================================
+* Add UR3 models and test compatibility
+* ROS-I interface (http://wiki.ros.org/Industrial/Industrial_Robot_Driver_Spec)
+	- It is already programmed but commented until further testing.
+	- It should work now if uncomment
+* Refactoring
+* Connection bug. It says error in case of a correct connection but it still works

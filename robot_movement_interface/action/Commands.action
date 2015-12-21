@@ -1,5 +1,8 @@
+# A list with all the commands sent to the robot
 CommandList commands
 ---
-CommandResult result
+# The result with a result code, the command id and additional information
+Result result
 ---
-CommandResult feedback
+# Feedback is the same message as result
+Result feedback

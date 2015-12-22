@@ -23,7 +23,7 @@ class Actionizer(object):
 
 	# Action initialisation
 	def __init__(self, name):
-		self.publisher = rospy.Publisher('/iiwa_command_list', CommandList)
+		self.publisher = rospy.Publisher('/iiwa_command_list', CommandList, queue_size=10)
 		self._action_name = name
 		self._as = actionlib.SimpleActionServer(self._action_name, CommandsAction, execute_cb=self.execute_cb, auto_start = False)
 		self._as.start()
@@ -52,7 +52,8 @@ class Actionizer(object):
 				#return
 
 if __name__ == '__main__':
-	rospy.init_node('commands_action_server')
+	rospy.init_node('commands_action_server')	
 	rospy.Subscriber('/iiwa_command_result', Result, result_callback)
 	Actionizer(rospy.get_name())
+	print "Action server started with name '/commands_action_server'"
 	rospy.spin()

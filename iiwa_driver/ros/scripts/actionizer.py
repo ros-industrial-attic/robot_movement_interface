@@ -14,7 +14,7 @@ last_result = -1
 # ------------------------------------------------------------------------
 def result_callback(msg):
 	global last_result
-	last_result = msg
+	last_result = msg	
 
 class Actionizer(object):
 	
@@ -46,10 +46,17 @@ class Actionizer(object):
 				return
 			rospy.sleep(0.05)
 		
-			#if last_result.command_id == last_id:
-				#self._result.last_result = last_result
-				#self._as.set_succeeded(self._result)
-				#return
+			try:
+				if last_result.command_id == last_id:
+					self._result.command_id = last_id			
+					self._as.set_succeeded(self._result)
+					return
+			except:
+				if len(goal.commands.commands) == 1:
+					self._result.command_id = last_id
+					print "Exception"
+
+			
 
 if __name__ == '__main__':
 	rospy.init_node('commands_action_server')	

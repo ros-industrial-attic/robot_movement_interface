@@ -7,14 +7,14 @@ import actionlib
 
 from robot_movement_interface.msg import *
 
-last_result = -1
-
 # ------------------------------------------------------------------------
 # Callback function executed after the publication of new result
 # ------------------------------------------------------------------------
 def result_callback(msg):
-	global last_result
-	last_result = msg	
+	print "---"
+	print "Result Callback:"
+	print msg
+	actionizerInstance.last_result = msg.command_id
 
 class Actionizer(object):
 	
@@ -30,6 +30,13 @@ class Actionizer(object):
 
 	# Action callback
 	def execute_cb(self, goal): 
+		print "---"
+		print "Execute Callback with {} commands".format(len(goal.commands.commands))
+
+		# setting a global variable for result callback method
+		global last_result
+		last_result = -1
+
 		try:
 			last_id = goal.commands.commands[-1].command_id
 		except:
@@ -39,18 +46,36 @@ class Actionizer(object):
 
 		self.publisher.publish(goal.commands)
 
+		# set the timeout; +8 second timeout for each command
+		timeout = time.time() + 8 * len(goal.commands.commands)
+		last_goal_reached = False
+
 		while True:
-			if self._as.is_preempt_requested():
-				print "Command list aborted (preempted)"
+
+			if last_goal_reached:
+				self._as.set_succeeded(self._result)
+				return
+
+			# check if timeout was reached for this loop
+			if time.time() > timeout:
+				print "Timeout reached (preempted)."
 				self._as.set_preempted()
 				return
+
+			if self._as.is_preempt_requested():
+				print "Command list aborted (preempted)."
+				self._as.set_preempted()
+				return
+
 			rospy.sleep(0.05)
-		
+
 			try:
-				if last_result.command_id == last_id:
-					self._result.command_id = last_id			
-					self._as.set_succeeded(self._result)
-					return
+				if self.last_result == last_id:
+					last_goal_reached = True
+					print "---"
+					print "Last trajectory command reached."
+					self._result.command_id = last_id
+
 			except:
 				if len(goal.commands.commands) == 1:
 					self._result.command_id = last_id
@@ -59,8 +84,8 @@ class Actionizer(object):
 			
 
 if __name__ == '__main__':
-	rospy.init_node('commands_action_server')	
+	rospy.init_node('commands_action_server')
 	rospy.Subscriber('/iiwa_command_result', Result, result_callback)
-	Actionizer(rospy.get_name())
+	actionizerInstance = Actionizer(rospy.get_name())
 	print "Action server started with name '/commands_action_server'"
 	rospy.spin()

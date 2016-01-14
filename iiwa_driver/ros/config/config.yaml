@@ -26,8 +26,8 @@ joints_delta: 0.01 # 0.01 radians
 # -----------------------------------------------------------------------------
 
 commander_service_name: "iiwa_telnet" # Telnet connection with the controller
-command_list: 'iiwa_command_list'     # Commands to be executed
-command_result: 'iiwa_command_result' # Topic which gives command feedback after execution
+command_list: 'command_list'          # Commands to be executed
+command_result: 'command_result'      # Topic which gives command feedback after execution
 topic_joints: 'joint_states'          # Joint configuration publishing
 topic_wrench: 'tcp_wrench'            # Force and torque publishing
 topic_iiwa_frame: 'tool_frame'        # Frame publishing as iiwa frame

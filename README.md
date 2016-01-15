@@ -14,6 +14,19 @@ This is the initial version of the driver after refactoring. Progresively more f
 Please report problems or suggestions to Pablo.Quilez.Velilla@ipa.fraunhofer.de
 
 ===============================================================================
+Instructions
+===============================================================================
+
+Before you can pass commands to a robot, it is import to start the appropriate robot driver by typing one of the following commands:
+- 	roslaunch ur_driver start.launch
+	Type: UR5/UR10 driver
+- 	roslaunch iiwa_driver start.launch
+	Type: Kuka IIWA driver
+
+Additionally we have to start the actionizer script for wrapping all commands which are sent to the robot into the approriate topic and for getting the status of the robot action e.g. succeeded, aborted etc.
+-	rosrun robot_movement_interface actionizer.py
+
+===============================================================================
 Robot Movement Interface
 ===============================================================================
 

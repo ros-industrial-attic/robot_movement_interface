@@ -14,7 +14,7 @@ def result_callback(msg):
 	print "---"
 	print "Result Callback:"
 	print msg
-	actionizerInstance.last_result = msg.command_id
+	actionizerInstance.last_result = msg
 
 class Actionizer(object):
 	
@@ -23,7 +23,7 @@ class Actionizer(object):
 
 	# Action initialisation
 	def __init__(self, name):
-		self.publisher = rospy.Publisher('/iiwa_command_list', CommandList, queue_size=10)
+		self.publisher = rospy.Publisher('/command_list', CommandList, queue_size=10)
 		self._action_name = name
 		self._as = actionlib.SimpleActionServer(self._action_name, CommandsAction, execute_cb=self.execute_cb, auto_start = False)
 		self._as.start()
@@ -35,7 +35,7 @@ class Actionizer(object):
 
 		# setting a global variable for result callback method
 		global last_result
-		last_result = -1
+		#last_result = -1
 
 		try:
 			last_id = goal.commands.commands[-1].command_id
@@ -46,21 +46,9 @@ class Actionizer(object):
 
 		self.publisher.publish(goal.commands)
 
-		# set the timeout; +8 second timeout for each command
-		timeout = time.time() + 8 * len(goal.commands.commands)
-		last_goal_reached = False
-
+		# loop until last goal was reached or 
+		# cancelation of the commands was requested
 		while True:
-
-			if last_goal_reached:
-				self._as.set_succeeded(self._result)
-				return
-
-			# check if timeout was reached for this loop
-			if time.time() > timeout:
-				print "Timeout reached (preempted)."
-				self._as.set_preempted()
-				return
 
 			if self._as.is_preempt_requested():
 				print "Command list aborted (preempted)."
@@ -70,22 +58,25 @@ class Actionizer(object):
 			rospy.sleep(0.05)
 
 			try:
-				if self.last_result == last_id:
-					last_goal_reached = True
+				# compare if the last_result which was delived by the robot
+				# equals the last_id in the goal array
+				if self.last_result.command_id == last_id:				
 					print "---"
 					print "Last trajectory command reached."
-					self._result.command_id = last_id
 
+					# pass the result of type CommandsResult() to the member of 
+					# the actionizer class and set state as succeeded				
+					self._result.result = self.last_result
+					self._as.set_succeeded(self._result)					
+					return
 			except:
-				if len(goal.commands.commands) == 1:
-					self._result.command_id = last_id
-					print "Exception"
+				# message to user when last_result.command_id could not be read
+				print "Waiting for last_result message."
 
 			
-
 if __name__ == '__main__':
 	rospy.init_node('commands_action_server')
-	rospy.Subscriber('/iiwa_command_result', Result, result_callback)
+	rospy.Subscriber('/command_result', Result, result_callback)
 	actionizerInstance = Actionizer(rospy.get_name())
 	print "Action server started with name '/commands_action_server'"
 	rospy.spin()

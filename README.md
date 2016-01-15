@@ -18,9 +18,9 @@ Instructions
 ===============================================================================
 
 Before you can pass commands to a robot, it is import to start the appropriate robot driver by typing one of the following commands:
-- 	roslaunch ur_driver start.launch
+- 	roslaunch ur_driver start.launch<br/>
 	Type: UR5/UR10 driver
-- 	roslaunch iiwa_driver start.launch
+- 	roslaunch iiwa_driver start.launch<br/>
 	Type: Kuka IIWA driver
 
 Additionally we have to start the actionizer script for wrapping all commands which are sent to the robot into the approriate topic and for getting the status of the robot action e.g. succeeded, aborted etc.
@@ -41,15 +41,15 @@ Interface description
 ===============================================================================
 
 Robot Movement Interface defines the following two topics:
--	/command_list: for robot controlling
+-	/command_list: for robot controlling<br/>
 	Type: robot_movement_interface/CommandList
--	/command_result: for robot feedback
+-	/command_result: for robot feedback<br/>
 	Type: robot_movement_interface/Result
 	
 Additionally, each driver provides robot state topics to publish the current robot position, joints or specific information. Every driver must publish as minimal state information the following topics:
--	/joint_states: joint angles publishing (in radians)
+-	/joint_states: joint angles publishing (in radians)<br/>
 	Type: sensor_msgs/JointState
--	/tool_frame: tool frame in m and radians following Euler Intrinsic ZYX convention
+-	/tool_frame: tool frame in m and radians following Euler Intrinsic ZYX convention<br/>
 	Type: robot_movement_interface/EulerFrame
 Position in quaternions or force if available is also published as independent topics following ROS conventions.
 

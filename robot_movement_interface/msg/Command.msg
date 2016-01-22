@@ -23,6 +23,9 @@ float32[] velocity
 string acceleration_type
 float32[] acceleration
 
+string force_threshold_type
+float32[] force_threshold
+
 string effort_type
 float32[] effort
 

@@ -71,7 +71,7 @@ class Actionizer(object):
 					return
 			except:
 				# message to user when last_result.command_id could not be read
-				print "Waiting for last_result message."
+				rospy.logdebug("Waiting for last_result message.")
 
 			
 if __name__ == '__main__':

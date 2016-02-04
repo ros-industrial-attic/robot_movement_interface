@@ -59,8 +59,8 @@ conf_robot_base_name = 'base_link'
 conf_joint_names  = ['joint_0','joint_1','joint_2','joint_3','joint_4','joint_5','joint_6']
 conf_max_speed    = [1.71042267, 1.71042267, 1.74532925, 2.26892803, 2.44346095, 3.14159265, 3.14159265] # rad / s joint_0..joint_1
 
-conf_cartesian_delta = 0.01 # Next position will be send to the robot x m in advance
-conf_joints_delta = 0.01 # 0.01 radians
+conf_cartesian_delta = 0.001 # Next position will be send to the robot x m in advance
+conf_joints_delta = 0.001 # 0.01 radians
 
 # ---------------------------------------------------------------------------------------
 # Shared variables - Thread safe

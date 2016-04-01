@@ -59,8 +59,8 @@ conf_robot_base_name = 'base_link'
 conf_joint_names  = ['joint_0','joint_1','joint_2','joint_3','joint_4','joint_5','joint_6']
 conf_max_speed    = [1.71042267, 1.71042267, 1.74532925, 2.26892803, 2.44346095, 3.14159265, 3.14159265] # rad / s joint_0..joint_1
 
-conf_cartesian_delta = 0.01 # Next position will be send to the robot x m in advance
-conf_joints_delta = 0.01 # 0.01 radians
+conf_cartesian_delta = 0.001 # Next position will be send to the robot x m in advance
+conf_joints_delta = 0.001 # 0.01 radians
 
 # ---------------------------------------------------------------------------------------
 # Shared variables - Thread safe
@@ -207,6 +207,26 @@ def move_manager(rate):
 			# There is an active command, check if it is finished
 			if command_active:
 				if checkFinished(com, command_active, code):
+
+					# Blending can be default or overwritten by the command
+					blending = 0.0 # 1 mm
+					if len(command_active.blending) > 0:
+						blending = command_active.blending[0]
+					if len(command_active.blending) > 1:
+						delta = command_active.blending[1]
+
+					# default result code is success
+					# result code: 0 - success
+					# result code: 100 - error (not implemented)
+					# result code: 200 - collision
+					result_code = 0
+
+					# check if the target was reached when using force threshold commands or if there was a collision
+					if command_active.command_type == "PTPFORCE" or command_active.command_type == "LINFORCE":
+						# when target was not reached with the configuration
+						if not multiDimensionalDistance(current_tcp_frame[:3], command_active.pose[:3], blending + conf_cartesian_delta):							
+							result_code = 200
+
                     # Keep alive direct commands by coping the command again in the pipeline (DIRECT and SMART mode only)
 					if len(command_list) == 0:
 						if command_active.command_type == 'DIRECT' or command_active.command_type == 'SMART':
@@ -217,7 +237,7 @@ def move_manager(rate):
 					# Publish message feedback
 					command_result_msg = Result()
 					command_result_msg.command_id = command_last.command_id
-					command_result_msg.result_code = 0
+					command_result_msg.result_code = result_code
 					publisher_command_result.publish(command_result_msg)
 			# There is currently no active command, so execute next		
 			if not command_active:
@@ -292,6 +312,18 @@ def executeCommand(com, command):
 		assert len(command.pose) == 7 and len(command.velocity) == 7
 		with lockCom:
 			com('joint move', ' '.join(str(i) for i in command.pose) + ' ' +  ' '.join(str(i) for i in command.velocity) )
+	elif command.command_type == 'LINFORCE' and command.pose_type == 'EULER_INTRINSIC_ZYX':
+		assert len(command.pose) == 6 and len(command.velocity) == 1 and len(command.blending) > 0 and len(command.force_threshold) == 3
+		with lockCom:
+			temp_pose = [command.pose[0] * 1000.0, command.pose[1] * 1000.0, command.pose[2] * 1000.0, command.pose[3], command.pose[4], command.pose[5]]
+			temp_force_threshold = [command.force_threshold[0], command.force_threshold[1], command.force_threshold[2]]
+			com('linforce move', ' '.join(str(i) for i in temp_pose) + ' ' + str(command.velocity[0]) + ' ' + str(command.blending[0] * 1000.0) + ' ' + ' '.join(str(i) for i in temp_force_threshold))
+	elif command.command_type == 'PTPFORCE' and command.pose_type == 'EULER_INTRINSIC_ZYX':
+		assert len(command.pose) == 6 and len(command.velocity) == 1 and len(command.blending) > 0 and len(command.force_threshold) == 3
+		with lockCom:
+			temp_pose = [command.pose[0] * 1000.0, command.pose[1] * 1000.0, command.pose[2] * 1000.0, command.pose[3], command.pose[4], command.pose[5]]
+			temp_force_threshold = [command.force_threshold[0], command.force_threshold[1], command.force_threshold[2]]
+			com('ptpforce move', ' '.join(str(i) for i in temp_pose) + ' ' + str(command.velocity[0]) + ' ' + str(command.blending[0] * 1000.0) + ' ' + ' '.join(str(i) for i in temp_force_threshold))
 	elif command.command_type == 'DIRECT' and command.pose_type == 'JOINTS':
 		assert len(command.pose) == 7 and len(command.velocity) == 7
 		with lockCom:

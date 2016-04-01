@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="limited" default="false"/>
+    <arg name="limited" default="false"/>
 
 	<!--<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
 		<param name="use_gui" value="true"/>

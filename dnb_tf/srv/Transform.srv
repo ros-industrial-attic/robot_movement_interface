@@ -1,0 +1,9 @@
+# the command list message from the actionizer
+robot_movement_interface/CommandList input_pose
+
+# and the string with the reference frame
+robot_movement_interface/EulerFrame frame_pose
+---
+# the transformed pose will always be transformed to 'base_link'
+# coordinate system so it can directly be send to the actionizer
+robot_movement_interface/CommandList output_pose

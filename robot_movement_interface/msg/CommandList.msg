@@ -7,6 +7,10 @@ Header header
 # New commands to be executed
 Command[] commands
 
+# Optional: Frame coordinates to execute the command
+# if not set, command will be executed in '/base' frame
+EulerFrame frame
+
 # True  -> Replaces any planned command with current new commands
 # False -> Adds the new commands to the command queue
 bool replace_previous_commands

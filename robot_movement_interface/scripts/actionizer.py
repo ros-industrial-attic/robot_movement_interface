@@ -64,20 +64,7 @@ class Actionizer(object):
 		except:
 			print "Error trying to access to last command ID"
 			self._as.set_succeeded(self._result)
-			return		
-
-		# set frame_id
-		# if a transformation is prefered the commands header frame_id
-		# need to be diffrent from 'base' frame
-		goal.commands.header.frame_id = 'test_frame'
-
-		# test_pose_1
-		goal.commands.frame.x = -0.18		  #X
-		goal.commands.frame.y = -0.4318		  #Y
-		goal.commands.frame.z = 0.346		  #Z
-		goal.commands.frame.alpha = 0         #RZ 
-		goal.commands.frame.beta = -1.57      #RY
-		goal.commands.frame.gamma = 0         #RX
+			return
 
 		# transform command before publishing the commands		
 		transformedCommandList = self._transformService(goal.commands, goal.commands.frame).output_pose

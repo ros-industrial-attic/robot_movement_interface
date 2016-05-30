@@ -35,10 +35,10 @@ def _publishTransformation(eulerPose, transformer, timestamp):
 
     # Calculate the orientation from RPY    
     inputFrameQuaternions = tf.transformations.quaternion_from_euler(
-        eulerPose.alpha,
+        eulerPose.gamma,
         eulerPose.beta, 
-        eulerPose.gamma, 
-        axes='szyx')    
+        eulerPose.alpha, 
+        axes='sxyz')    
 
     transformation.transform.rotation.x = inputFrameQuaternions[0]
     transformation.transform.rotation.y = inputFrameQuaternions[1]
@@ -68,10 +68,10 @@ def _transform(inPose, inTrafo, timestamp):
 
     # Calculate the orientation from RPY
     inputQuaternions = tf.transformations.quaternion_from_euler(
-        inPose[3], 
-        inPose[4], 
         inPose[5], 
-        axes='szyx')
+        inPose[4], 
+        inPose[3], 
+        axes='sxyz')
 
     inputPose.pose.orientation.x = inputQuaternions[0]
     inputPose.pose.orientation.y = inputQuaternions[1]
@@ -97,11 +97,11 @@ def _transform(inPose, inTrafo, timestamp):
         transformedPose.pose.orientation.y,
         transformedPose.pose.orientation.z,
         transformedPose.pose.orientation.w],
-        axes='szyx')
+        axes='sxyz')
 
-    outPose[3] = outputEuler[0]
+    outPose[3] = outputEuler[2]
     outPose[4] = outputEuler[1]
-    outPose[5] = outputEuler[2]
+    outPose[5] = outputEuler[0]
 
     # return the pose
     return outPose

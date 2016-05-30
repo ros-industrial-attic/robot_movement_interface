@@ -72,6 +72,7 @@ class Actionizer(object):
 		# when the response is not empty, in case of a successful transformation
 		# set this new transformation as a goal. or just publish on topic
 		if transformedCommandList.commands:
+			print 'Transformation successful.'
 			goal.commands = transformedCommandList		
 		
 		# publish the goal to topic

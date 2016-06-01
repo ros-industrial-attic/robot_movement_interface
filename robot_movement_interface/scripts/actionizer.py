@@ -6,6 +6,12 @@ import thread
 import actionlib
 
 from robot_movement_interface.msg import *
+from dnb_tf.srv import *
+
+# ------------------------------------------------------------------------
+# Variables
+# ------------------------------------------------------------------------
+transformServiceName = '/transform_pose'
 
 # ------------------------------------------------------------------------
 # Callback function executed after the publication of new result
@@ -26,10 +32,26 @@ class Actionizer(object):
 		self.publisher = rospy.Publisher('/command_list', CommandList, queue_size=10)
 		self._action_name = name
 		self._as = actionlib.SimpleActionServer(self._action_name, CommandsAction, execute_cb=self.execute_cb, auto_start = False)
+		
+		print "Starting actionizer..."
+
+		# wait some seconds for the transform_pose service before
+		# raising exception
+		while not rospy.is_shutdown():
+			try:				
+				rospy.wait_for_service(transformServiceName, timeout=3)
+				break
+			except:
+				rospy.logerr("Could not start actionizer. Check if service " + transformServiceName + " is running.")				
+
+		# create the service client when waiting for it was successful
+		self._transformService = rospy.ServiceProxy(transformServiceName, Transform)
+		
 		self._as.start()
 
 	# Action callback
 	def execute_cb(self, goal): 
+
 		print "---"
 		print "Execute Callback with {} commands".format(len(goal.commands.commands))
 
@@ -44,6 +66,16 @@ class Actionizer(object):
 			self._as.set_succeeded(self._result)
 			return
 
+		# transform command before publishing the commands		
+		transformedCommandList = self._transformService(goal.commands, goal.commands.frame).output_pose
+
+		# when the response is not empty, in case of a successful transformation
+		# set this new transformation as a goal. or just publish on topic
+		if transformedCommandList.commands:
+			print 'Transformation successful.'
+			goal.commands = transformedCommandList		
+		
+		# publish the goal to topic
 		self.publisher.publish(goal.commands)
 
 		# loop until last goal was reached or 
@@ -77,6 +109,7 @@ class Actionizer(object):
 if __name__ == '__main__':
 	rospy.init_node('commands_action_server')
 	rospy.Subscriber('/command_result', Result, result_callback)
-	actionizerInstance = Actionizer(rospy.get_name())
+	actionizerInstance = Actionizer(rospy.get_name())	
+
 	print "Action server started with name '/commands_action_server'"
 	rospy.spin()

@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="robot_movement_interface" type="actionizer.py" name="commands_action_server" output="screen"/>
+	<node pkg="dnb_tf" type="transformation.py" name="transformation" output="screen"/>
+</launch>

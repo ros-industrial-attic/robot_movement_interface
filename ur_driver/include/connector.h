@@ -69,7 +69,6 @@ namespace ur_driver
             {
                 public:
                     int packageLength;
-                    //unsigned char packageLength;
                     unsigned char packageType;
 
                 public:
@@ -94,12 +93,19 @@ namespace ur_driver
             class MasterboardData
             {
                 public:
-                    unsigned char stuff[64/*76*/-5];
+                    int DigitalnputBits;
+                    int DigitaOutputBits;
 
                 public:
                     void fixByteOrder()
                     {
-                        // TODO
+                        DigitalnputBits = be32toh(DigitalnputBits);
+                        DigitaOutputBits = be32toh(DigitaOutputBits);
+                    }
+
+                    // returns true if bit number pos of a given byte is true or false if not
+                    bool bit_to_bool(int byte, int pos){
+                        return (byte >> pos) & 1;
                     }
             }__attribute__((packed));
 
@@ -113,6 +119,13 @@ namespace ur_driver
                     double Ry; //Ry: Rotation vector representation of the tool orientation
                     double Rz; //Rz: Rotation vector representation of the tool orientation
 
+                    double TCPOffsetX; //TCP offset, X-value
+                    double TCPOffsetY; //TCP offset, Y-value
+                    double TCPOffsetZ; //TCP offset, Z-value
+                    double TCPOffsetRX; //TCP offset, Rx-value (Rotation vector representation of TCP orientation)
+                    double TCPOffsetRY; //TCP offset, Ry-value (Rotation vector representation of TCP orientation)
+                    double TCPOffsetRZ;	//TCP offset, Rz-value (Rotation vector representation of TCP orientation)
+
                 public:
                     void fixByteOrder()
                     {
@@ -122,6 +135,13 @@ namespace ur_driver
                         Rx     = bedtoh(Rx);
                         Ry     = bedtoh(Ry);
                         Rz     = bedtoh(Rz);
+
+                        TCPOffsetX     = bedtoh(TCPOffsetX);
+                        TCPOffsetY     = bedtoh(TCPOffsetY);
+                        TCPOffsetZ     = bedtoh(TCPOffsetZ);
+                        TCPOffsetRX     = bedtoh(TCPOffsetRX);
+                        TCPOffsetRY     = bedtoh(TCPOffsetRY);
+                        TCPOffsetRZ     = bedtoh(TCPOffsetRZ);
                     }
             }__attribute__((packed));
 
@@ -156,7 +176,10 @@ namespace ur_driver
                     double q_act;
                     double q_tar;
                     double qd_act;
-                    float current, voltage, temperature, unknown;
+                    float current;
+                    float voltage;
+                    float temperature;
+                    float unknown; //obsolete
                     unsigned char JointMode; //new in CB3
 
                 public:
@@ -175,6 +198,7 @@ namespace ur_driver
 
             //double time;
             unsigned char robotMessageType;
+
             // Get info out here!!!
             PacketHeader robotModeHeader;
             RobotMode robotMode;
@@ -344,7 +368,10 @@ namespace ur_driver
                 IOS[i] = v;
             }
 
-        private:
+            bool isUrProgramRunning;
+            bool isUrProgramPaused;
+
+    private:
             JointPosition jointPosition;
             JointVelocity jointVelocity;
             CartesianPosition cartesianPosition;

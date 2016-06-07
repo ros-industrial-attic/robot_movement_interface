@@ -386,7 +386,7 @@ void Connector::readSocketWorker()
                             for (int i=0; i<8; i++)
                             {
                                 robotState.set_IO(18+i, masterBoardData->bit_to_bool(masterBoardData->DigitaOutputBits, i));
-+                               ROS_DEBUG("Output State %d: %d", 18 + i, robotState.get_IO(18+i));
+                                ROS_DEBUG("Output State %d: %d", 18 + i, robotState.get_IO(18+i));
                             }
 
                             // TODO: Read Tool inputs and outputs??? The following worked in the past but not with CB3.2

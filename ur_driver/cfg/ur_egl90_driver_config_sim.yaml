@@ -26,7 +26,7 @@ robotFlangeFrameName: "ur_flange"
 robotTcpFrameName: "ur_flange"
 robotReadFrequency: 100
 robotWriteFrequency: 100
-publishStateFrequency: 50
+publishStateFrequency: 30
 velocity: 0.1
 acceleration: 0.5
 angleTolerance: 0.02

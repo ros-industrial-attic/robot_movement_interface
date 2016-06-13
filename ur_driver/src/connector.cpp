@@ -17,6 +17,7 @@
 // ----------------------------------------------------------------------------
 
 #include <connector.h>
+#include <iostream>
 
 using namespace std;
 using namespace ur_driver;
@@ -259,7 +260,7 @@ void Connector::readSocketWorker()
             // 1. read package size
             //===========================
             char dataPackageSize[4];
-            size_t length = socket.read_some(boost::asio::buffer(dataPackageSize), error);
+            size_t length = socket.read_some(boost::asio::buffer(dataPackageSize), error); //reads only 4 bytes of overall comming package size
 
             //connection closed cleanly by peer.
             if (error == boost::asio::error::eof)
@@ -280,6 +281,7 @@ void Connector::readSocketWorker()
                 throw length_error("socket read: data package size: read byte length (" + boost::lexical_cast<string>(length) + ") differs from expected length (4)");
             }
 
+            // Calculate packagesize
             uint32_t packageSize = (dataPackageSize[3] << 24) | (dataPackageSize[2] << 16) | (dataPackageSize[1] << 8) | dataPackageSize[0];
             packageSize = be32toh(packageSize) - 4;
 
@@ -290,7 +292,7 @@ void Connector::readSocketWorker()
             // 2. read package content
             //===========================
             char dataPackageContent[1024];
-            length = socket.read_some(boost::asio::buffer(dataPackageContent), error);
+            length = socket.read_some(boost::asio::buffer(dataPackageContent), error); // reads the rest of the package
 
             //connection closed cleanly by peer.
             if (error == boost::asio::error::eof)
@@ -304,12 +306,12 @@ void Connector::readSocketWorker()
             }
 
             //verify read byte length
-            if (length != packageSize)
+            if (length != packageSize) //throws if read package size does not match with received package size
             {
                 throw length_error("socket read: data package content: read byte length (" + boost::lexical_cast<string>(length) + ") differs from expected length (" + boost::lexical_cast<string>(packageSize) + ")");
             }
 
-            //print dataPackageContent stream in hex format
+            //print dataPackageContent stream in hex format, and only the content part (without the first 4byte package size info!)
             ROS_DEBUG_NAMED("connector", "socket read: data package content (%i): %s", (int)length, hexString(dataPackageContent, length).c_str());
 
             if (port == PRIMARY)
@@ -319,32 +321,111 @@ void Connector::readSocketWorker()
             }
             else if (port == SECONDARY)
             {
-                Packet_port30002 *packet = (Packet_port30002*)dataPackageContent;
-                packet->fixByteOrder();
+                ROS_WARN_COND(dataPackageContent[0] != 16, "Something went wrong: First packageType must always be 16 but was %i", dataPackageContent[0]);
 
                 //process data package
-                JointPosition jointPosition;
-                jointPosition.setValues(6, packet->joint[0].q_act, packet->joint[1].q_act, packet->joint[2].q_act, packet->joint[3].q_act, packet->joint[4].q_act, packet->joint[5].q_act);
-
-                JointVelocity jointVelocity;
-                jointVelocity.setValues(6, packet->joint[0].qd_act, packet->joint[1].qd_act, packet->joint[2].qd_act, packet->joint[3].qd_act, packet->joint[4].qd_act, packet->joint[5].qd_act);
-
-                CartesianPosition cartesianPosition;
-                cartesianPosition.setValues(packet->cartesianInfo.X_Tool, packet->cartesianInfo.Y_Tool, packet->cartesianInfo.Z_Tool, packet->cartesianInfo.Rx, packet->cartesianInfo.Ry, packet->cartesianInfo.Rz);
-
                 RobotState robotState;
+
+                JointPosition jointPosition(6);
+                JointVelocity jointVelocity(6);
+                CartesianPosition cartesianPosition;
+
+                int bytepointer = 1; // first byte of message was consumed as RobotMessageType
+
+                while (bytepointer < packageSize)
+                {
+                    Packet_port30002::PacketHeader *packageHeader = (Packet_port30002::PacketHeader*)&dataPackageContent[bytepointer];
+                    packageHeader->fixByteOrder();
+                    //ROS_WARN("Type: %i, Length: %i", packageHeader->packageType, packageHeader->packageLength);
+                    switch (packageHeader->packageType)
+                    {
+                        case 0:
+                        {
+                            Packet_port30002::RobotMode *robotmode = (Packet_port30002::RobotMode*)&dataPackageContent[bytepointer+sizeof(Packet_port30002::PacketHeader)];
+                            ROS_DEBUG("RobotMode Package received");
+                            robotmode->fixByteOrder();
+                            robotState.isUrProgramRunning = robotmode->isProgramRunning;
+                            robotState.isUrProgramPaused = robotmode->isProgramPaused;
+                            break;
+                        }
+                        case 1:
+                        {
+                            for (int jointCnt=0; jointCnt<6; jointCnt++)
+                            {
+                                Packet_port30002::Joint *jointData =
+                                        (Packet_port30002::Joint*)&dataPackageContent[bytepointer+sizeof(Packet_port30002::PacketHeader)+jointCnt*sizeof(Packet_port30002::Joint)];
+                                jointData->fixByteOrder();
+                                jointPosition[jointCnt] = jointData->q_act;
+                                jointVelocity[jointCnt] = jointData->qd_act;
+                            }
+                            ROS_DEBUG("JointData Package received");
+                        break;
+                        }
+                        case 2:
+                        {
+                            Packet_port30002::ToolData *toolData = (Packet_port30002::ToolData*)&dataPackageContent[bytepointer+sizeof(Packet_port30002::PacketHeader)];
+                            ROS_DEBUG("ToolData Package received");
+                            // Do the following before using it!
+                            //toolData->fixByteOrder();
+                        break;
+                        }
+                        case 3:
+                        {
+                            Packet_port30002::MasterboardData *masterBoardData = (Packet_port30002::MasterboardData*)&dataPackageContent[bytepointer+sizeof(Packet_port30002::PacketHeader)];
+                            masterBoardData->fixByteOrder();
+                            ROS_DEBUG("MasterboardData Package received");
+
+                            // Read Input State 0 to 7 -> robotState.getIO(0..7)
+                            for (int i=0; i<8; i++)
+                            {
+                                robotState.set_IO(i, masterBoardData->bit_to_bool(masterBoardData->DigitalnputBits, i));
+                                ROS_DEBUG("Input State %d: %d", i, robotState.get_IO(i));
+                            }
+
+                            // Read Output State 0 to 7 -> robotState.getIO(8..15)
+                            for (int i=0; i<8; i++)
+                            {
+                                robotState.set_IO(18+i, masterBoardData->bit_to_bool(masterBoardData->DigitaOutputBits, i));
+                                ROS_DEBUG("Output State %d: %d", 18 + i, robotState.get_IO(18+i));
+                            }
+
+                            // TODO: Read Tool inputs and outputs??? The following worked in the past but not with CB3.2
+
+						    // IOS
+						    // 0-7 digital input, 8-15 configurable input, 16-17 tool input, 18-25 digital output, 26-33 configurable output, 34-35 tool output
+						    /* for (int i= 0; i< 8; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 452, i%8));
+						    for (int i= 8; i<16; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 451, i%8));
+						    for (int i=16; i<18; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 450, i%2));
+						    for (int i=18; i<26; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 456, i%8));
+						    for (int i=26; i<34; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 455, i%8));
+						    for (int i=34; i<36; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 454, i%2)); */
+
+
+                        break;
+                        }
+                        case 4:
+                        {
+                            Packet_port30002::CartesianInfo *cartesianInfo = (Packet_port30002::CartesianInfo*)&dataPackageContent[bytepointer+sizeof(Packet_port30002::PacketHeader)];
+                            ROS_DEBUG("CartesianInfo Package received");
+                            cartesianInfo->fixByteOrder();
+                            cartesianPosition.setValues(
+                                        cartesianInfo->X_Tool,
+                                        cartesianInfo->Y_Tool,
+                                        cartesianInfo->Z_Tool,
+                                        cartesianInfo->Rx,
+                                        cartesianInfo->Ry,
+                                        cartesianInfo->Rz);
+
+                        break;
+                        }
+                    }
+
+                    bytepointer+=packageHeader->packageLength;
+                }
+
                 robotState.setJointPosition(jointPosition);
                 robotState.setJointVelocity(jointVelocity);
                 robotState.setCartesianPosition(cartesianPosition);
-
-                // IOS
-                // 0-7 digital input, 8-15 configurable input, 16-17 tool input, 18-25 digital output, 26-33 configurable output, 34-35 tool output
-                for (int i= 0; i< 8; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 452, i%8));
-                for (int i= 8; i<16; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 451, i%8));
-                for (int i=16; i<18; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 450, i%2));
-                for (int i=18; i<26; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 456, i%8));
-                for (int i=26; i<34; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 455, i%8));
-                for (int i=34; i<36; i++) robotState.set_IO(i, packet->bit_to_bool(dataPackageContent, 454, i%2));
 
                 notifyListeners(robotState);
             }

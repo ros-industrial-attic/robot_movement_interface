@@ -32,7 +32,8 @@ def talker():
 
     # wait for the action until found
     client.wait_for_server();
-    print "'DigitalIO' server found."    
+    print "'DigitalIO' server found."
+    print "Gripper publisher started."    
     
     counter = publishFrequency
     actualGripperPosition = 0.03
@@ -60,7 +61,6 @@ def talker():
         msg.name = ["egl_position"]
         pub.publish(msg)
 
-        print "published pos: " + str(actualGripperPosition)
         # count up and sleep
         counter = counter + 1
         rate.sleep()
@@ -68,7 +68,6 @@ def talker():
 def openGripper(actualPos):
     if actualPos <= openGripperLimit:
         newPos = actualPos + 0.04 / publishFrequency
-        print "newPos :" + str(newPos)
         return newPos        
     else:
         return actualPos
@@ -76,7 +75,6 @@ def openGripper(actualPos):
 def closeGripper(actualPos):
     if actualPos >= closeGripperLimit:
         newPos = actualPos - 0.04 / publishFrequency
-        print "newPos :" + str(newPos)
         return newPos
     else:
         return actualPos

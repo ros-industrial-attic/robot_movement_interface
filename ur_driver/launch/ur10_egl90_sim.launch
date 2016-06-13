@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="limited" default="false"/>
+
+	<!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+		<param name="use_gui" value="false"/>
+	</node-->
+
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+
+	<!-- The gripper fake publisher for simulation purposes -->
+	<node name="gripper_sim_publisher" pkg="ur_driver" type="egl90_sim_publisher.py" />
+
+	<param unless="$(arg limited)" name="robot_description" command="$(find xacro)/xacro.py '$(find ur_description)/urdf/ur10_gripper_robot.urdf.xacro'" />
+
+	<param if="$(arg limited)" name="robot_description" command="$(find xacro)/xacro.py '$(find ur_description)/urdf/ur10_joint_limited_robot.urdf.xacro'" />
+
+	<!-- load configuration -->
+	<rosparam file="$(find ur_driver)/cfg/ur_egl90_driver_config_sim.yaml" command="load" />
+
+	<!-- start driver -->
+	<node pkg="ur_driver" type="ur_driver" name="ur_driver" output="screen"/>
+</launch>

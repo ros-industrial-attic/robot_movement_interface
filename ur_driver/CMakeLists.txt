@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 	message_generation
 	control_msgs
 	robot_movement_interface
+  ipa325_robot_descriptions
 )
 
 find_package(Boost REQUIRED COMPONENTS
@@ -45,7 +46,8 @@ catkin_package(
         rospy
         sensor_msgs
         tf
-		robot_movement_interface
+		    robot_movement_interface
+        ipa325_robot_descriptions
     DEPENDS Boost
 )
 

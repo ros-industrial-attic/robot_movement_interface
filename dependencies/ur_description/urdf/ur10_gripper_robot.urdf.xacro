@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+       name="ur10_gripper" >
+
+  <!-- common stuff -->
+  <xacro:include filename="$(find ur_description)/urdf/gazebo.urdf.xacro" />
+
+  <!-- ur10 -->
+  <xacro:include filename="$(find ur_description)/urdf/ur10.urdf.xacro" />
+
+  <!-- arm -->
+  <xacro:ur10_robot prefix="" joint_limited="false"/>
+
+  <!-- tool -->
+  <xacro:include filename="$(find ipa325_robot_descriptions)/urdf/tools/egl90/egl90.urdf.xacro" />
+
+  <link name="world" />
+
+  <joint name="world_joint" type="fixed">
+    <parent link="world" />
+    <child link= "base_link" />
+    <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
+
+  <!-- tool -->
+  <xacro:egl90 prefix="gripper_" parent="tool0">
+  <origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:egl90>
+
+</robot>

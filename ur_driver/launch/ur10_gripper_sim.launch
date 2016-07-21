@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="limited" default="false"/>
+
+    <!-- include the ur10 simulation launch file -->
+    <include file="$(find ur_driver)/launch/ur10_sim.launch"/>
+
+	<!-- The gripper fake publisher for simulation purposes -->
+	<node name="gripper_sim_publisher" pkg="ur_driver" type="egl90_sim_publisher.py" />
+
+	<!-- Load the appropriate robot model -->
+	<param unless="$(arg limited)" name="robot_description" command="$(find xacro)/xacro.py '$(find ur_description)/urdf/ur10_gripper_robot.urdf.xacro'" />
+</launch>

@@ -15,7 +15,5 @@
     <rosparam file="$(find ur_driver)/cfg/ur_driver_config.yaml" command="load" />
     
     <!-- start driver -->
-    <node pkg="ur_driver" type="ur_driver" name="ur_driver" output="screen">
-
-    </node>
+    <node pkg="ur_driver" type="ur_driver" name="ur_driver" output="screen"/>
 </launch>

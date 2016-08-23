@@ -22,6 +22,7 @@ import time
 import rospy
 import random
 import socket
+import thread
 from iiwa_driver.srv import *
 # -----------------------------------------------------------------------------
 # Default parameters, they will be overwritten by the config.yaml file
@@ -31,6 +32,7 @@ TCP_PORT = 30000
 SERVICE_NAME = 'iiwa_telnet'
 # -----------------------------------------------------------------------------
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+lock = thread.allocate_lock() 	# Lock for tcp communication. Only one command can be sent at the same time
 # -----------------------------------------------------------------------------
 # Connect with the robot. It will try to reconnect in case of error
 # -----------------------------------------------------------------------------
@@ -57,17 +59,17 @@ def flush(line):
 # Ros service: transforms the received command into string
 # -----------------------------------------------------------------------------
 def send_command(req):
-
-	response = StringCommandResponse()	# ROS StringCommandResponse service response
-	response.error_code = 0				# No error by default
-	
-	rospy.logdebug("Sent: " + req.command + " : " + req.parameters + "\n")	# Debug	
-	response.response = flush(req.command + " : " + req.parameters + "\n")	
-	rospy.logdebug("Received: " + response.response)	# Debug
-	
-	if response.response == 'error':
-		response.error_code = 1
-	return response
+	with lock:	# rospy seems not to deal good with concurrent service calls therefore the need to do it manually
+		response = StringCommandResponse()	# ROS StringCommandResponse service response
+		response.error_code = 0				# No error by default
+		
+		rospy.logdebug("Sent: " + req.command + " : " + req.parameters + "\n")	# Debug	
+		response.response = flush(req.command + " : " + req.parameters + "\n")	
+		rospy.logdebug("Received: " + response.response)	# Debug
+		
+		if response.response == 'error':
+			response.error_code = 1
+		return response
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------

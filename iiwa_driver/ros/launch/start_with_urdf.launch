@@ -2,6 +2,7 @@
 
 	<!-- Set URDF model as iiwa_description -->
 	<param name="iiwa_description" textfile="$(find ipa325_robot_descriptions)/urdf/lbr5/iiwa.urdf" />
+	<param name="robot_description" textfile="$(find ipa325_robot_descriptions)/urdf/lbr5/iiwa.urdf" />
 
 	<!-- Start the communication between ROS and ROBOT -->
 	<node name="iiwa_com" pkg="iiwa_driver" type="iiwa_commander.py">

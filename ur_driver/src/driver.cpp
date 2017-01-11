@@ -157,7 +157,7 @@ Driver::Driver() :
 
     // Robot Movement Interface
     isCommandActive = false;
-	isLastCommand = false;
+    isLastCommand = false;
     commandResultPublisher = nodeHandle.advertise<robot_movement_interface::Result>("command_result", 1);
     commandListSubscriber = nodeHandle.subscribe("command_list", 1, &Driver::commandListCallback, this);
     commandThread = boost::thread(&Driver::commandThreadWorker, this); // start commander
@@ -959,24 +959,24 @@ void Driver::commandThreadWorker()
 
         commandMutex.lock();
 
-		if (commandList.size() > 0){
-			if (isCommandFinished(commandList[0], &result)){
+        if (commandList.size() > 0){
+            if (isCommandFinished(commandList[0], &result)){
 
-				isLastCommand = true;
-				lastCommand = commandList[0];
+                isLastCommand = true;
+                lastCommand = commandList[0];
 
-				if (commandList[0].command_id >= 0){
+                if (commandList[0].command_id >= 0){
 
-					robot_movement_interface::Result result_msg;
-		            result_msg.command_id = commandList[0].command_id;
-		            result_msg.result_code = result;
-		            commandResultPublisher.publish(result_msg); 
+                    robot_movement_interface::Result result_msg;
+                    result_msg.command_id = commandList[0].command_id;
+                    result_msg.result_code = result;
+                    commandResultPublisher.publish(result_msg); 
 
-				}
+                }
 
-				commandList.erase(commandList.begin());
-			}
-		}
+                commandList.erase(commandList.begin());
+            }
+        }
 
         commandMutex.unlock();
 
@@ -995,25 +995,27 @@ bool Driver::isCommandFinished(robot_movement_interface::Command command, int *r
         double dy = fabs(lastRobotState.getCartesianPosition().y() - command.pose[1]);
         double dz = fabs(lastRobotState.getCartesianPosition().z() - command.pose[2]);
 
-		float blending = 0.0;	// m
-		float delta = 0.001;	// m
+        float blending = 0.0;   // m
+        float delta = 0.001;    // m
 
-		if (command.blending.size() > 0) blending = command.blending[0];
-		if (command.blending.size() > 1) delta = command.blending[1];
+        if (command.blending.size() > 0) blending = command.blending[0];
+        if (command.blending.size() > 1) delta = command.blending[1];
+
+        if (delta < 0.0005) delta = 0.0005;
 
         return (dx * dx + dy * dy + dz * dz) <= (blending + delta) * (blending + delta);
 
     } else if (strcmp(command.pose_type.c_str(), "JOINTS") == 0){
 
-		double sum = 0;
-		double delta = 0.01; // 0.01 rad to consider a position correct
+        double sum = 0;
+        double delta = 0.01; // 0.01 rad to consider a position correct
 
-		if (command.blending.size() > 1) delta = command.blending[1];
+        if (command.blending.size() > 1) delta = command.blending[1];
 
-		JointPosition pos =	lastRobotState.getJointPosition();	
-		for (int i = 0; i < 6; i++) sum += fabs(command.pose[i] - pos[i]) * fabs(command.pose[i] - pos[i]);
-		return sum <= (delta) * (delta); 
-	}
+        JointPosition pos = lastRobotState.getJointPosition();  
+        for (int i = 0; i < 6; i++) sum += fabs(command.pose[i] - pos[i]) * fabs(command.pose[i] - pos[i]);
+        return sum <= (delta) * (delta); 
+    }
 
     return false;
 
@@ -1021,147 +1023,147 @@ bool Driver::isCommandFinished(robot_movement_interface::Command command, int *r
 
 int Driver::processCommand(robot_movement_interface::Command command, ur_driver::Command * result){
 
-	// ------------------------------------------------------------------------
-	// Format validation
-	// ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Format validation
+    // ------------------------------------------------------------------------
 
-	if (strcmp(command.pose_type.c_str(), "JOINTS") == 0){
-		if (command.pose.size() < 6) return 0;
-	}
+    if (strcmp(command.pose_type.c_str(), "JOINTS") == 0){
+        if (command.pose.size() < 6) return 0;
+    }
 
-	if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0){
-		if (command.pose.size() < 6) return 0;
-	}
+    if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0){
+        if (command.pose.size() < 6) return 0;
+    }
 
-	if (strcmp(command.velocity_type.c_str(), "M/S") == 0){
-		if (command.velocity.size() < 1) return 0;
-	}
+    if (strcmp(command.velocity_type.c_str(), "M/S") == 0){
+        if (command.velocity.size() < 1) return 0;
+    }
 
-	if (strcmp(command.acceleration_type.c_str(), "M/S^2") == 0){
-		if (command.acceleration.size() < 1) return 0;
-	}
+    if (strcmp(command.acceleration_type.c_str(), "M/S^2") == 0){
+        if (command.acceleration.size() < 1) return 0;
+    }
 
-	if (strcmp(command.velocity_type.c_str(), "RAD/S") == 0){
-		if (command.velocity.size() < 1) return 0;
-	}
+    if (strcmp(command.velocity_type.c_str(), "RAD/S") == 0){
+        if (command.velocity.size() < 1) return 0;
+    }
 
-	if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") == 0){
-		if (command.acceleration.size() < 1) return 0;
-	}
+    if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") == 0){
+        if (command.acceleration.size() < 1) return 0;
+    }
 
-	if (strcmp(command.blending_type.c_str(), "M") == 0){
-		if (command.blending.size() < 1) return 0;
-	}
-	// ------------------------------------------------------------------------
+    if (strcmp(command.blending_type.c_str(), "M") == 0){
+        if (command.blending.size() < 1) return 0;
+    }
+    // ------------------------------------------------------------------------
 
 
-	if (strcmp(command.command_type.c_str(), "LIN") == 0) {
+    if (strcmp(command.command_type.c_str(), "LIN") == 0) {
 
-		if (strcmp(command.pose_type.c_str(), "JOINTS") == 0) {
+        if (strcmp(command.pose_type.c_str(), "JOINTS") == 0) {
 
-			JointValue position = JointValue(6);
-			for (int i=0; i<6; i++) position[i] = command.pose[i];
+            JointValue position = JointValue(6);
+            for (int i=0; i<6; i++) position[i] = command.pose[i];
 
-			if (strcmp(command.velocity_type.c_str(), "M/S") != 0) return 0;
-			if (strcmp(command.acceleration_type.c_str(), "M/S^2") != 0) return 0;
-			if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
+            if (strcmp(command.velocity_type.c_str(), "M/S") != 0) return 0;
+            if (strcmp(command.acceleration_type.c_str(), "M/S^2") != 0) return 0;
+            if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
 
-			*result = CommandLinJointBlending(position, command.velocity[0], command.acceleration[0], command.blending[0]);
+            *result = CommandLinJointBlending(position, command.velocity[0], command.acceleration[0], command.blending[0]);
 
-		} else if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0) {
+        } else if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0) {
 
-			if (strcmp(command.velocity_type.c_str(), "M/S") != 0) return 0;
-			if (strcmp(command.acceleration_type.c_str(), "M/S^2") != 0) return 0;
-			if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
+            if (strcmp(command.velocity_type.c_str(), "M/S") != 0) return 0;
+            if (strcmp(command.acceleration_type.c_str(), "M/S^2") != 0) return 0;
+            if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
 
-			// Euler intrinsic ZYX -> RPY extrinsic XYZ needs only to change order
-			CartesianPosition cartesianPosition;
-		    cartesianPosition.x() = command.pose[0];
-		    cartesianPosition.y() = command.pose[1];
-		    cartesianPosition.z() = command.pose[2];
-			tf::Vector3 quaternion = rpyToQuaternion(command.pose[5], command.pose[4], command.pose[3]);
-		    tf::Vector3 axis = quaternionToAxis(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
-		    cartesianPosition.rx() = axis.x();
-		    cartesianPosition.ry() = axis.y();
-		    cartesianPosition.rz() = axis.z();
+            // Euler intrinsic ZYX -> RPY extrinsic XYZ needs only to change order
+            CartesianPosition cartesianPosition;
+            cartesianPosition.x() = command.pose[0];
+            cartesianPosition.y() = command.pose[1];
+            cartesianPosition.z() = command.pose[2];
+            tf::Vector3 quaternion = rpyToQuaternion(command.pose[5], command.pose[4], command.pose[3]);
+            tf::Vector3 axis = quaternionToAxis(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+            cartesianPosition.rx() = axis.x();
+            cartesianPosition.ry() = axis.y();
+            cartesianPosition.rz() = axis.z();
 
-			*result = CommandLinCartesianBlending(cartesianPosition, command.velocity[0], command.acceleration[0], command.blending[0]);
+            *result = CommandLinCartesianBlending(cartesianPosition, command.velocity[0], command.acceleration[0], command.blending[0]);
 
-		}
+        }
 
-	} else if (strcmp(command.command_type.c_str(), "LIN_TIMED") == 0){
+    } else if (strcmp(command.command_type.c_str(), "LIN_TIMED") == 0){
 
-		if (strcmp(command.pose_type.c_str(), "JOINTS") != 0) return 0;
-	
+        if (strcmp(command.pose_type.c_str(), "JOINTS") != 0) return 0;
+    
         JointPosition jointPosition(6);
-		for (int i = 0; i < 6; i++) jointPosition[i] = command.pose[i];
+        for (int i = 0; i < 6; i++) jointPosition[i] = command.pose[i];
 
-		double velocity = configuration.velocity; // No matters, time has priority
+        double velocity = configuration.velocity; // No matters, time has priority
         double acceleration = configuration.acceleration; // No matters, time has priority
 
-		if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
-		double blending = command.blending[0];
+        if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
+        double blending = command.blending[0];
 
-		if (command.additional_values.size() < 1) return 0;
-		double time = command.additional_values[0];
+        if (command.additional_values.size() < 1) return 0;
+        double time = command.additional_values[0];
 
         *result = CommandLinJointTimed(jointPosition, velocity, acceleration, blending, time);
 
-	} else if (strcmp(command.command_type.c_str(), "PTP") == 0) {
+    } else if (strcmp(command.command_type.c_str(), "PTP") == 0) {
 
-		if (strcmp(command.pose_type.c_str(), "JOINTS") == 0) {
+        if (strcmp(command.pose_type.c_str(), "JOINTS") == 0) {
 
-			JointValue position = JointValue(6);
-			for (int i=0; i<6; i++) position[i] = command.pose[i];
+            JointValue position = JointValue(6);
+            for (int i=0; i<6; i++) position[i] = command.pose[i];
 
-			if (strcmp(command.velocity_type.c_str(), "RAD/S") != 0) return 0;
-			if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
-			if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
+            if (strcmp(command.velocity_type.c_str(), "RAD/S") != 0) return 0;
+            if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
+            if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
 
-			*result = CommandPtpJointBlending(position, command.velocity[0], command.acceleration[0], command.blending[0]);
+            *result = CommandPtpJointBlending(position, command.velocity[0], command.acceleration[0], command.blending[0]);
 
-		} else if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0) {
+        } else if (strcmp(command.pose_type.c_str(), "EULER_INTRINSIC_ZYX") == 0) {
 
-			if (strcmp(command.velocity_type.c_str(), "RAD/S") != 0) return 0;
-			if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
-			if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
+            if (strcmp(command.velocity_type.c_str(), "RAD/S") != 0) return 0;
+            if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
+            if (strcmp(command.blending_type.c_str(), "M") != 0) return 0;
 
-			// Euler intrinsic ZYX -> RPY extrinsic XYZ needs only to change order
-			CartesianPosition cartesianPosition;
-		    cartesianPosition.x() = command.pose[0];
-		    cartesianPosition.y() = command.pose[1];
-		    cartesianPosition.z() = command.pose[2];
-			tf::Vector3 quaternion = rpyToQuaternion(command.pose[5], command.pose[4], command.pose[3]);
-		    tf::Vector3 axis = quaternionToAxis(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
-		    cartesianPosition.rx() = axis.x();
-		    cartesianPosition.ry() = axis.y();
-		    cartesianPosition.rz() = axis.z();
+            // Euler intrinsic ZYX -> RPY extrinsic XYZ needs only to change order
+            CartesianPosition cartesianPosition;
+            cartesianPosition.x() = command.pose[0];
+            cartesianPosition.y() = command.pose[1];
+            cartesianPosition.z() = command.pose[2];
+            tf::Vector3 quaternion = rpyToQuaternion(command.pose[5], command.pose[4], command.pose[3]);
+            tf::Vector3 axis = quaternionToAxis(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+            cartesianPosition.rx() = axis.x();
+            cartesianPosition.ry() = axis.y();
+            cartesianPosition.rz() = axis.z();
 
-			*result = CommandPtpCartesianBlending(cartesianPosition, command.velocity[0], command.acceleration[0], command.blending[0]);
+            *result = CommandPtpCartesianBlending(cartesianPosition, command.velocity[0], command.acceleration[0], command.blending[0]);
 
-		}
+        }
 
-	} else if (strcmp(command.command_type.c_str(), "JOINT_SPEED") == 0){
+    } else if (strcmp(command.command_type.c_str(), "JOINT_SPEED") == 0){
 
 
-		if (command.velocity.size() < 6) return 0;
+        if (command.velocity.size() < 6) return 0;
 
         JointVelocity jointVelocity(6);
         for (int i=0; i<6; i++) jointVelocity[i] = command.velocity[i];
 
-		if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
+        if (strcmp(command.acceleration_type.c_str(), "RAD/S^2") != 0) return 0;
 
-		double acceleration = command.acceleration[0];
+        double acceleration = command.acceleration[0];
 
-		if (command.additional_values.size() == 0){ 
-			*result = CommandJointVelocity(jointVelocity, acceleration, 1.0);
-		} else {
-			*result = CommandJointVelocity(jointVelocity, acceleration, command.additional_values[0]);
-		}
+        if (command.additional_values.size() == 0){ 
+            *result = CommandJointVelocity(jointVelocity, acceleration, 1.0);
+        } else {
+            *result = CommandJointVelocity(jointVelocity, acceleration, command.additional_values[0]);
+        }
 
-	} else if (strcmp(command.command_type.c_str(), "CARTESIAN_SPEED") == 0){
+    } else if (strcmp(command.command_type.c_str(), "CARTESIAN_SPEED") == 0){
 
-		if (command.velocity.size() < 6) return 0;
+        if (command.velocity.size() < 6) return 0;
         
         CartesianVelocity cartesianVelocity;
         cartesianVelocity.x() = command.velocity[0];
@@ -1174,20 +1176,20 @@ int Driver::processCommand(robot_movement_interface::Command command, ur_driver:
         cartesianVelocity.ry() = axis.y();
         cartesianVelocity.rz() = axis.z();
 
-		double acceleration = configuration.acceleration;
-		if (strcmp(command.acceleration_type.c_str(), "M/S^2") == 0) acceleration = command.acceleration[0];
+        double acceleration = configuration.acceleration;
+        if (strcmp(command.acceleration_type.c_str(), "M/S^2") == 0) acceleration = command.acceleration[0];
 
-		if (command.additional_values.size() == 0){ 
-			*result = CommandCartesianVelocity(cartesianVelocity, acceleration, 1.0);
-		} else {
-			*result = CommandCartesianVelocity(cartesianVelocity, acceleration, command.additional_values[0]);
-		}
+        if (command.additional_values.size() == 0){ 
+            *result = CommandCartesianVelocity(cartesianVelocity, acceleration, 1.0);
+        } else {
+            *result = CommandCartesianVelocity(cartesianVelocity, acceleration, command.additional_values[0]);
+        }
 
-	} else {
-		return 0;
-	}
+    } else {
+        return 0;
+    }
 
-	return 1;
+    return 1;
 
 }
 
@@ -1195,46 +1197,46 @@ int Driver::processCommand(robot_movement_interface::Command command, ur_driver:
 void Driver::commandListCallback(const robot_movement_interface::CommandListConstPtr &msg)
 {
 
-	if (!msg->replace_previous_commands) return; // No more addition allowed, can be simulated by repeating commands in the new trajectory
+    if (!msg->replace_previous_commands) return; // No more addition allowed, can be simulated by repeating commands in the new trajectory
     
     commandMutex.lock();
 
-	if (msg->replace_previous_commands) commandList.clear(); // Deletion in cascade should prevent from memory leaks
+    if (msg->replace_previous_commands) commandList.clear(); // Deletion in cascade should prevent from memory leaks
 
-	for (int i = 0; i < msg->commands.size(); i++) commandList.push_back(msg->commands[i]); // Commands are copied including copy in cascade of the vectors
-	
-	// Replace quaternions with euler coordinates
-	replaceQuaternions(commandList);
+    for (int i = 0; i < msg->commands.size(); i++) commandList.push_back(msg->commands[i]); // Commands are copied including copy in cascade of the vectors
+    
+    // Replace quaternions with euler coordinates
+    replaceQuaternions(commandList);
 
-	if (msg->commands.size() > 0){
-		Command commands [commandList.size()];
-		bool differential_found = false;
-		for (int i = 0; i < commandList.size(); i++){
-			if (processCommand(commandList[i], &commands[i]) == 0){			
-				std::cerr << "Error in command list, aborting...";
-				commandList.clear();
-				commandMutex.unlock();
-				return;
-			}
-			if (strcmp(commandList[i].command_type.c_str(), "JOINT_SPEED") == 0) differential_found = true; // The commands include a differential command, no result will be provided
-			if (strcmp(commandList[i].command_type.c_str(), "CARTESIAN_SPEED") == 0) differential_found = true; // The commands include a differential command, no result will be provided
-		}
+    if (msg->commands.size() > 0){
+        Command commands [commandList.size()];
+        bool differential_found = false;
+        for (int i = 0; i < commandList.size(); i++){
+            if (processCommand(commandList[i], &commands[i]) == 0){         
+                std::cerr << "Error in command list, aborting...";
+                commandList.clear();
+                commandMutex.unlock();
+                return;
+            }
+            if (strcmp(commandList[i].command_type.c_str(), "JOINT_SPEED") == 0) differential_found = true; // The commands include a differential command, no result will be provided
+            if (strcmp(commandList[i].command_type.c_str(), "CARTESIAN_SPEED") == 0) differential_found = true; // The commands include a differential command, no result will be provided
+        }
 
-		CommandMultiCommand * multi = new CommandMultiCommand(commands, commandList.size());
+        CommandMultiCommand * multi = new CommandMultiCommand(commands, commandList.size());
 
-		if (differential_found){
-			commandList.clear();
-			isLastCommand = false;
-		}
+        if (differential_found){
+            commandList.clear();
+            isLastCommand = false;
+        }
 
-		connector.addCommand(multi);
-	} else {
-		// Send stop command if replace == true
-		if (msg->replace_previous_commands){
-			Command * stopcommand = new CommandStop(configuration.acceleration);
-			connector.addCommand(stopcommand);
-		}
-	}
+        connector.addCommand(multi);
+    } else {
+        // Send stop command if replace == true
+        if (msg->replace_previous_commands){
+            Command * stopcommand = new CommandStop(configuration.acceleration);
+            connector.addCommand(stopcommand);
+        }
+    }
 
     commandMutex.unlock();
 
@@ -1244,37 +1246,37 @@ void Driver::commandListCallback(const robot_movement_interface::CommandListCons
 
 // Replaces all quaternions with Euler coordinates
 void Driver::replaceQuaternions(std::vector<robot_movement_interface::Command> & list){
-	for (int i = 0; i < list.size(); i++){
-		if (strcmp(list[i].pose_type.c_str(), "QUATERNION") == 0){
-			list[i].pose_type = "EULER_INTRINSIC_ZYX";
-			list[i].pose = transformQuaternionToEulerIntrinsicZYX(list[i].pose);
-		}
-	}
+    for (int i = 0; i < list.size(); i++){
+        if (strcmp(list[i].pose_type.c_str(), "QUATERNION") == 0){
+            list[i].pose_type = "EULER_INTRINSIC_ZYX";
+            list[i].pose = transformQuaternionToEulerIntrinsicZYX(list[i].pose);
+        }
+    }
 }
 
 // Transforms a quaternion to Euler Intrinsic ZYX through Rotation Matrix
 std::vector<float> Driver::transformQuaternionToEulerIntrinsicZYX(std::vector<float> frame_quaternion){
 
-	assert(frame_quaternion.size() == 7); // Test correct input
-	
-	float z,y,x;
-	
-	transformQuaternionToEulerIntrinsicZYX(frame_quaternion[3], frame_quaternion[4], frame_quaternion[5], frame_quaternion[6], &z, &y, &x );
-	
-	std::vector<float> euler;
-	for (int i=0; i<3; i++) euler.push_back(frame_quaternion[i]);
-	euler.push_back(z);
-	euler.push_back(y);
-	euler.push_back(x);
-	return euler;
+    assert(frame_quaternion.size() == 7); // Test correct input
+    
+    float z,y,x;
+    
+    transformQuaternionToEulerIntrinsicZYX(frame_quaternion[3], frame_quaternion[4], frame_quaternion[5], frame_quaternion[6], &z, &y, &x );
+    
+    std::vector<float> euler;
+    for (int i=0; i<3; i++) euler.push_back(frame_quaternion[i]);
+    euler.push_back(z);
+    euler.push_back(y);
+    euler.push_back(x);
+    return euler;
 }
 
 // Transforms a quaternion to Euler Intrinsic ZYX through Rotation Matrix
 void Driver::transformQuaternionToEulerIntrinsicZYX(float qx, float qy, float qz, float qw, float * z, float * y, float * x ){
 
-	float m[3][3];
-	
-	m[0][0] = 1 - 2*qy*qy - 2*qz*qz;
+    float m[3][3];
+    
+    m[0][0] = 1 - 2*qy*qy - 2*qz*qz;
     m[0][1] = 2*qx*qy - 2*qz*qw;
     m[0][2] = 2*qx*qz + 2*qy*qw;
     m[1][0] = 2*qx*qy + 2*qz*qw;
@@ -1284,8 +1286,8 @@ void Driver::transformQuaternionToEulerIntrinsicZYX(float qx, float qy, float qz
     m[2][1] = 2*qy*qz + 2*qx*qw;
     m[2][2] = 1 - 2*qx*qx - 2*qy*qy;
 
-	*z = atan2( m[1][0], m[0][0]);
+    *z = atan2( m[1][0], m[0][0]);
     *y = atan2(-m[2][0], sqrt(m[2][1] * m[2][1] + m[2][2] * m[2][2]));
     *x = atan2( m[2][1], m[2][2]);
-	
+    
 }

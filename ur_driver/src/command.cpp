@@ -62,8 +62,8 @@ CommandJointTimedPosition::CommandJointTimedPosition(JointValue position, double
         position[5],
         accel,
         speed,
-		time,
-		blending);
+        time,
+        blending);
 
     commandString = std::string(buffer);
 }
@@ -159,7 +159,7 @@ CommandCartesianPositionBlending::CommandCartesianPositionBlending(CartesianValu
             position.rz(),
             accel,
             speed,
-	        blending);
+            blending);
     }
 
     commandString = std::string(buffer);
@@ -171,24 +171,24 @@ CommandCartesianPositionBlending::CommandCartesianPositionBlending(CartesianValu
 
 CommandMultiCommand::CommandMultiCommand(Command * commands, int size){
 
-	commandString.clear();
+    commandString.clear();
 
-	commandString.append("def multi():\r\n");
+    commandString.append("def multi():\r\n");
 
-	for (int i=0; i < size; i++){
-		commandString.append("  ");
-		commandString.append(commands[i].getCommandString());
-	}
+    for (int i=0; i < size; i++){
+        commandString.append("  ");
+        commandString.append(commands[i].getCommandString());
+    }
 
-	commandString.append("end\r\nmulti()\r\n");
+    commandString.append("end\r\nmulti()\r\n");
 
 }
 
 CommandStop::CommandStop(double acceleration)
 {
     char buffer[255];
-   	snprintf(buffer, 255, "stopj(a=%5.5f)\n", acceleration);
-	commandString = std::string(buffer);
+    snprintf(buffer, 255, "stopj(a=%5.5f)\n", acceleration);
+    commandString = std::string(buffer);
 }
 
 CommandCartesianVelocity::CommandCartesianVelocity(CartesianVelocity velocity, double accel, double time)
@@ -227,7 +227,8 @@ CommandJointVelocity::CommandJointVelocity(JointVelocity velocity, double accel,
 
 CommandLinCartesianBlending::CommandLinCartesianBlending(CartesianValue position, double speed, double accel, double blending){
     char buffer[255];
-    snprintf(buffer, 255, "movep(p[%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, r=%5.5f)\n",
+    if (blending <= 0.0001) blending = 0.0001;
+    snprintf(buffer, 255, "movel(p[%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, t=0, r=%5.5f)\n",
         position.x(),
         position.y(),
         position.z(),
@@ -242,6 +243,7 @@ CommandLinCartesianBlending::CommandLinCartesianBlending(CartesianValue position
 
 CommandPtpCartesianBlending::CommandPtpCartesianBlending(CartesianValue position, double speed, double accel, double blending){
     char buffer[255];
+    if (blending <= 0.0001) blending = 0.0001;
     snprintf(buffer, 255, "movej(p[%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, r=%5.5f)\n",
         position.x(),
         position.y(),
@@ -257,7 +259,8 @@ CommandPtpCartesianBlending::CommandPtpCartesianBlending(CartesianValue position
 
 CommandLinJointBlending::CommandLinJointBlending(JointValue position, double speed, double accel, double blending){
     char buffer[255];
-    snprintf(buffer, 255, "movep([%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, r=%5.5f)\n",
+    if (blending <= 0.0001) blending = 0.0001;
+    snprintf(buffer, 255, "movel([%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, t=0, r=%5.5f)\n",
         position[0],
         position[1],
         position[2],
@@ -272,6 +275,7 @@ CommandLinJointBlending::CommandLinJointBlending(JointValue position, double spe
 
 CommandPtpJointBlending::CommandPtpJointBlending(JointValue position, double speed, double accel, double blending){
     char buffer[255];
+    if (blending <= 0.0001) blending = 0.0001;
     snprintf(buffer, 255, "movej([%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], a=%5.5f, v=%5.5f, r=%5.5f)\n",
         position[0],
         position[1],
@@ -288,7 +292,7 @@ CommandPtpJointBlending::CommandPtpJointBlending(JointValue position, double spe
 CommandLinJointTimed::CommandLinJointTimed(JointValue position, double speed, double accel, double blending, double time)
 {
     char buffer[255];
-
+    if (blending <= 0.0001) blending = 0.0001;
     snprintf(buffer, 255, "movel([%5.5f, %5.5f, %5.5f, %5.5f, %5.5f, %5.5f], %5.5f, %5.5f, %5.5f, %5.5f)\n",
         position[0],
         position[1],
@@ -298,8 +302,8 @@ CommandLinJointTimed::CommandLinJointTimed(JointValue position, double speed, do
         position[5],
         accel,
         speed,
-		time,
-		blending);
+        time,
+        blending);
 
     commandString = std::string(buffer);
 }

@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_movement_interface)
 
-find_package(catkin REQUIRED COMPONENTS genmsg actionlib_msgs actionlib std_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS message_generation actionlib_msgs actionlib std_msgs)
 
-add_message_files(
+add_message_files(DIRECTORY msg
   FILES
   Result.msg
   Command.msg
@@ -11,14 +11,15 @@ add_message_files(
   EulerFrame.msg
 )
 
-add_action_files(
-  DIRECTORY action FILES Commands.action
+add_action_files(DIRECTORY action
+  FILES
+  Commands.action
 )
 
-generate_messages(  
+generate_messages(
   DEPENDENCIES actionlib_msgs std_msgs
 )
 
 catkin_package(
-  CATKIN_DEPENDS actionlib_msgs std_msgs
+  CATKIN_DEPENDS message_runtime actionlib_msgs std_msgs
 )

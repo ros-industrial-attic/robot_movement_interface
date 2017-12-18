@@ -1,0 +1,10 @@
+# Number of the IO which whose value is requested
+int32 number
+# Value of the IO to be set
+bool value
+---
+# Error = -1 if unknown error
+# Error =  0 if no error, !0 if error
+# Error =  1 if IO number out of range
+# Error =  2 if attemping to set input IO
+int32 error

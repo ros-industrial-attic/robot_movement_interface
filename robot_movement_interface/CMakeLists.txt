@@ -11,6 +11,13 @@ add_message_files(DIRECTORY msg
   EulerFrame.msg
 )
 
+add_service_files(
+  FILES
+  GetIO.srv
+  SetIO.srv
+  SetFloat.srv
+)
+
 add_action_files(DIRECTORY action
   FILES
   Commands.action

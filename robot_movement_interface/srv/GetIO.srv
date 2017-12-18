@@ -1,0 +1,9 @@
+# Number of the IO which whose value is requested
+int32 number
+---
+# Current value of the IO
+bool value
+# Error = -1 if unknown error
+# Error =  0 if no error, !0 if error
+# Error =  1 if IO number out of range
+int32 error

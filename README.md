@@ -87,7 +87,7 @@ Command.msg:
 	-	string acceleration_type -> defines in which format is the acceleration provided (m/s^2, %...)
 	-	float32[] acceleration -> acceleration values
 	-	string force_threshold_type -> defines in which format the cartesian force thresholds are passed (Typical: N)
-	-	float32 force_threshold[] -> cartesian force thresholds in x, y, z when robot moves force constrained
+	-	float32[] force_threshold -> cartesian force thresholds in x, y, z when robot moves force constrained
 	-	string effort_type -> defines in which format is the robot effort provided
 	-	float32[] effort -> effort values
 	-	string blending_type -> blending units (m, rad, %...)
